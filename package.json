@@ -1,0 +1,57 @@
+{
+  "name": "@avraapi/apix-sdk",
+  "version": "1.0.0",
+  "description": "Official TypeScript/JavaScript SDK for the APIX (AvraAPI) enterprise API gateway. Zero framework dependencies — works in any Node.js 18+ project.",
+  "author": "Fidex Developers (Pvt) Ltd <dev@fidex.lk> (https://avraapi.com)",
+  "license": "MIT",
+  "keywords": ["apix", "avraapi", "sms", "pdf", "qr", "barcode", "sdk", "api-gateway"],
+  "homepage": "https://avraapi.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/avraapi/apix-node-sdk"
+  },
+
+  "engines": {
+    "node": ">=18.0.0"
+  },
+
+  "type": "module",
+
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+
+  "scripts": {
+    "build": "npm run build:esm && npm run build:cjs && npm run build:types",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:types": "tsc -p tsconfig.types.json",
+    "dev": "tsc -p tsconfig.esm.json --watch",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "lint": "tsc --noEmit"
+  },
+
+  "dependencies": {
+    "axios": "^1.7.2"
+  },
+
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/node": "^20.12.7"
+  }
+}

@@ -107,10 +107,19 @@ export interface PdfMargins {
 
 export interface GeneratePdfParams {
   /**
-   * Raw HTML document or fragment to convert (max 512 KB).
+   * HTML content to convert (max 512 KB after decoding).
    * Full <!DOCTYPE html> documents and plain fragments are both accepted.
+   * When `isBase64` is true, this must be a Base64-encoded HTML string.
    */
   readonly html: string;
+  /**
+   * Set to `true` if the `html` field contains a Base64-encoded HTML string.
+   * The server decodes the content before validation and rendering.
+   * Recommended for complex templates with quotes, newlines, and special
+   * characters to avoid JSON escaping issues.
+   * @default false
+   */
+  readonly isBase64?: boolean;
   /**
    * Response mode.
    * - 'binary' → BinaryResponse (raw PDF bytes, use saveAs() or getBuffer())
@@ -130,6 +139,31 @@ export interface GeneratePdfParams {
   readonly orientation?: PdfOrientation;
   /** Custom page margins in millimetres. */
   readonly margins?: PdfMargins;
+  /**
+   * When true, the raw HTML content and PDF metadata are excluded from
+   * api_payload_logs. Use for sensitive documents (invoices, contracts, PII).
+   * @default false
+   */
+  readonly privacyMode?: boolean;
+}
+
+/** Parameters for the generatePdfFromBase64() convenience method. */
+export interface GeneratePdfFromBase64Params {
+  /**
+   * Raw HTML content (NOT pre-encoded). The SDK encodes it automatically.
+   * Full documents and plain fragments are both accepted.
+   */
+  readonly html: string;
+  /** @default 'binary' */
+  readonly responseType?: PdfResponseType;
+  /** @default 'A4' */
+  readonly pageSize?: PdfPageSize;
+  /** @default 'portrait' */
+  readonly orientation?: PdfOrientation;
+  /** Custom page margins in millimetres. */
+  readonly margins?: PdfMargins;
+  /** Suppress payload storage in observability logs. @default false */
+  readonly privacyMode?: boolean;
 }
 
 export interface PdfBase64Data {
@@ -277,6 +311,14 @@ export class UtilitiesService extends AbstractService {
    * const pdf  = await apix.utilities().generatePdf({ html });
    * await (pdf as BinaryResponse).saveAs('./output/invoice.pdf');
    *
+   * // Pre-encoded Base64 HTML input:
+   * const encoded = Buffer.from(complexHtml).toString('base64');
+   * const pdf = await apix.utilities().generatePdf({
+   *   html: encoded,
+   *   isBase64: true,
+   * });
+   * await (pdf as BinaryResponse).saveAs('./output/invoice.pdf');
+   *
    * // Landscape A4 with custom margins:
    * const landscape = await apix.utilities().generatePdf({
    *   html,
@@ -286,14 +328,8 @@ export class UtilitiesService extends AbstractService {
    * });
    * await (landscape as BinaryResponse).saveAs('./output/landscape.pdf');
    *
-   * // Base64 response:
-   * const b64 = await apix.utilities().generatePdf({
-   *   html,
-   *   responseType: 'base64',
-   * });
-   * const api = b64 as ApiResponse<PdfBase64Data>;
-   * console.log(api.data.media_type); // 'application/pdf'
-   * const buf = Buffer.from(api.data.data, 'base64');
+   * // Privacy mode (sensitive documents):
+   * const pdf = await apix.utilities().generatePdf({ html, privacyMode: true });
    * ```
    */
   public async generatePdf(
@@ -301,13 +337,57 @@ export class UtilitiesService extends AbstractService {
   ): Promise<ApiResponse<PdfBase64Data> | BinaryResponse> {
     const payload = this.stripNulls({
       html:          params.html,
+      is_base64:     params.isBase64 === true ? true : undefined,
       response_type: params.responseType  ?? 'binary',
       page_size:     params.pageSize      ?? 'A4',
       orientation:   params.orientation   ?? 'portrait',
       margins:       params.margins,
+      privacy_mode:  params.privacyMode === true ? true : undefined,
     });
 
     return this.post('/utilities/pdf/generate', payload) as Promise<ApiResponse<PdfBase64Data> | BinaryResponse>;
+  }
+
+  /**
+   * Convert an HTML document to PDF using Base64 transport encoding.
+   *
+   * Convenience wrapper around generatePdf() that automatically Base64-encodes
+   * the raw HTML string. This is the recommended approach for complex templates
+   * containing quotes, newlines, inline CSS, or special characters — it avoids
+   * JSON escaping issues entirely.
+   *
+   * The server decodes the Base64 content before validation and rendering.
+   * The 512 KB size limit applies to the decoded HTML, not the encoded payload.
+   *
+   * @param params.html  Raw HTML content (NOT pre-encoded). This method encodes it.
+   *
+   * @throws {ApixValidationError}
+   * @throws {ApixAuthenticationError}
+   * @throws {ApixInsufficientFundsError}
+   * @throws {ApixRateLimitError}
+   * @throws {ApixError}
+   * @throws {ApixNetworkError}
+   *
+   * @example
+   * ```ts
+   * import { readFileSync } from 'node:fs';
+   *
+   * // Complex invoice template — no escaping worries:
+   * const html = readFileSync('./templates/invoice.html', 'utf-8');
+   * const pdf  = await apix.utilities().generatePdfFromBase64({ html });
+   * await (pdf as BinaryResponse).saveAs('./output/invoice.pdf');
+   * ```
+   */
+  public async generatePdfFromBase64(
+    params: GeneratePdfFromBase64Params,
+  ): Promise<ApiResponse<PdfBase64Data> | BinaryResponse> {
+    // Spread optional params (omitting undefined keys) then override html + isBase64
+    const { html: _raw, ...rest } = params;
+    return this.generatePdf({
+      ...rest,
+      html:     Buffer.from(params.html).toString('base64'),
+      isBase64: true,
+    });
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────

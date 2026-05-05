@@ -33,8 +33,8 @@
  *     SmsRecipientMessage, SmsSendData, SmsBalanceData
  *     GenerateQrParams, QrFormat, QrBase64Data
  *     GenerateBarcodeParams, BarcodeType, BarcodeFormat
- *     GeneratePdfParams, PdfPageSize, PdfOrientation, PdfResponseType
- *     PdfMargins, PdfBase64Data
+ *     GeneratePdfParams, GeneratePdfFromBase64Params, PdfPageSize, PdfOrientation
+ *     PdfResponseType, PdfMargins, PdfBase64Data
  *
  * Usage:
  *   import { ApixClient, ApixValidationError, BinaryResponse } from '@avraapi/apix-sdk';
@@ -90,6 +90,7 @@ export type {
   BarcodeType,
   BarcodeFormat,
   GeneratePdfParams,
+  GeneratePdfFromBase64Params,
   PdfPageSize,
   PdfOrientation,
   PdfResponseType,

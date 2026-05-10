@@ -20,7 +20,7 @@ import { ApixError, ApixAuthenticationError, ApixInsufficientFundsError, ApixVal
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 const BINARY_CONTENT_TYPES = ['image/png', 'image/svg+xml', 'application/pdf'];
-const SDK_VERSION = '1.0.0';
+const SDK_VERSION = '1.1.2';
 // ─────────────────────────────────────────────────────────────────────────────
 // HttpClient
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,6 +71,36 @@ export class HttpClient {
             // Axios throws here only for network-level failures (ECONNREFUSED,
             // ETIMEDOUT, etc.) — not for HTTP 4xx/5xx which are caught by
             // validateStatus: () => true above.
+            if (isAxiosError(err) && err.request != null && err.response == null) {
+                throw new ApixNetworkError(`Could not connect to APIX gateway at '${url}'. ` +
+                    `Check baseUrl and ensure the server is reachable. ` +
+                    `Original error: ${err.message}`, err);
+            }
+            throw new ApixNetworkError(`APIX request failed: ${err instanceof Error ? err.message : String(err)}`, err instanceof Error ? err : undefined);
+        }
+        return this.handleResponse(response);
+    }
+    /**
+     * Execute a GET request and return a typed response object.
+     *
+     * Used by endpoints that accept path parameters instead of JSON bodies
+     * (e.g. currency conversion endpoints).
+     *
+     * @throws {ApixError}         On any API-level error.
+     * @throws {ApixNetworkError}  On transport-level failure (no HTTP response).
+     */
+    async get(path, query = {}, extraHeaders = {}) {
+        const url = this.normalizePath(path);
+        const headers = this.buildRequestHeaders(extraHeaders);
+        let response;
+        try {
+            response = await this.axiosInstance.get(url, {
+                headers,
+                params: query,
+                responseType: 'arraybuffer',
+            });
+        }
+        catch (err) {
             if (isAxiosError(err) && err.request != null && err.response == null) {
                 throw new ApixNetworkError(`Could not connect to APIX gateway at '${url}'. ` +
                     `Check baseUrl and ensure the server is reachable. ` +

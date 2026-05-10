@@ -37,5 +37,16 @@ export declare abstract class AbstractService {
      * @param extraHeaders Additional per-request headers.
      */
     protected post(path: string, payload?: Record<string, unknown>, extraHeaders?: Record<string, string>): Promise<ApiResponse | BinaryResponse>;
+    /**
+     * Dispatch a GET request via the shared HttpClient.
+     *
+     * Used by endpoints that accept path parameters instead of JSON bodies
+     * (e.g. currency conversion endpoints).
+     *
+     * @param path         Endpoint path (any format — HttpClient normalizes it).
+     * @param query        Optional query string parameters.
+     * @param extraHeaders Additional per-request headers.
+     */
+    protected get(path: string, query?: Record<string, string>, extraHeaders?: Record<string, string>): Promise<ApiResponse | BinaryResponse>;
 }
 //# sourceMappingURL=AbstractService.d.ts.map

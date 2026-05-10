@@ -24,6 +24,8 @@
  *   apix.location()   — IP geolocation lookup
  *   apix.sms()        — SMS send / balance operations
  *   apix.utilities()  — QR codes, barcodes, PDF generation
+ *   apix.security()   — VPN/Proxy Shield, Burner Email Detection
+ *   apix.currency()   — Multi-currency exchange rates & conversion
  *
  * ── Provider Override (fluent) ────────────────────────────────────────────────
  *
@@ -49,6 +51,8 @@ import { HttpClient }                     from './HttpClient.js';
 import { LocationService }                from './services/LocationService.js';
 import { SmsService }                     from './services/SmsService.js';
 import { UtilitiesService }               from './services/UtilitiesService.js';
+import { SecurityService }                from './services/SecurityService.js';
+import { CurrencyService }                from './services/CurrencyService.js';
 import { ApiResponse }                    from './responses/ApiResponse.js';
 import { BinaryResponse }                 from './responses/BinaryResponse.js';
 
@@ -62,6 +66,8 @@ export class ApixClient {
   private _location:  LocationService  | null = null;
   private _sms:       SmsService       | null = null;
   private _utilities: UtilitiesService | null = null;
+  private _security:  SecurityService  | null = null;
+  private _currency:  CurrencyService  | null = null;
 
   /**
    * Create a new APIX client.
@@ -155,6 +161,44 @@ export class ApixClient {
     return (this._utilities ??= new UtilitiesService(this.http));
   }
 
+  /**
+   * Access the Security service group.
+   *
+   * Available operations:
+   *   - `checkVpn({ ip })` — VPN/Proxy/Tor detection
+   *   - `checkBurnerEmail({ email })` — Disposable email detection
+   *
+   * @example
+   * ```ts
+   * const vpn = await apix.security().checkVpn({ ip: '8.8.8.8' });
+   * const email = await apix.security().checkBurnerEmail({ email: 'test@mailinator.com' });
+   * ```
+   */
+  public security(): SecurityService {
+    return (this._security ??= new SecurityService(this.http));
+  }
+
+  /**
+   * Access the Currency service group.
+   *
+   * Available operations:
+   *   - `getCodes()` — All supported currency codes
+   *   - `getLatestRates(base)` — Rates from a base currency
+   *   - `getPairRate(base, target)` — Exchange rate between two currencies
+   *   - `convert(base, target, amount)` — Convert an amount
+   *
+   * @example
+   * ```ts
+   * const codes = await apix.currency().getCodes();
+   * const rates = await apix.currency().getLatestRates('USD');
+   * const pair  = await apix.currency().getPairRate('USD', 'EUR');
+   * const conv  = await apix.currency().convert('USD', 'LKR', 100);
+   * ```
+   */
+  public currency(): CurrencyService {
+    return (this._currency ??= new CurrencyService(this.http));
+  }
+
   // ── Universal Call ────────────────────────────────────────────────────────────
 
   /**
@@ -200,13 +244,15 @@ export class ApixClient {
   ): Promise<ApiResponse | BinaryResponse> {
     const normalizedMethod = method.toUpperCase().trim();
 
-    if (normalizedMethod !== 'POST') {
-      throw new Error(
-        `APIX SDK: Unsupported HTTP method '${method}'. ` +
-        `The APIX gateway uses POST for all operations.`,
-      );
+    switch (normalizedMethod) {
+      case 'GET':
+        return this.http.get(path, payload as Record<string, string>);
+      case 'POST':
+        return this.http.post(path, payload);
+      default:
+        throw new Error(
+          `APIX SDK: Unsupported HTTP method '${method}'. Supported methods: GET, POST.`,
+        );
     }
-
-    return this.http.post(path, payload);
   }
 }

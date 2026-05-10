@@ -24,6 +24,8 @@
  *   apix.location()   — IP geolocation lookup
  *   apix.sms()        — SMS send / balance operations
  *   apix.utilities()  — QR codes, barcodes, PDF generation
+ *   apix.security()   — VPN/Proxy Shield, Burner Email Detection
+ *   apix.currency()   — Multi-currency exchange rates & conversion
  *
  * ── Provider Override (fluent) ────────────────────────────────────────────────
  *
@@ -47,6 +49,8 @@ import { Config, type ApixClientOptions } from './Config.js';
 import { LocationService } from './services/LocationService.js';
 import { SmsService } from './services/SmsService.js';
 import { UtilitiesService } from './services/UtilitiesService.js';
+import { SecurityService } from './services/SecurityService.js';
+import { CurrencyService } from './services/CurrencyService.js';
 import { ApiResponse } from './responses/ApiResponse.js';
 import { BinaryResponse } from './responses/BinaryResponse.js';
 export declare class ApixClient {
@@ -56,6 +60,8 @@ export declare class ApixClient {
     private _location;
     private _sms;
     private _utilities;
+    private _security;
+    private _currency;
     /**
      * Create a new APIX client.
      *
@@ -133,6 +139,38 @@ export declare class ApixClient {
      * ```
      */
     utilities(): UtilitiesService;
+    /**
+     * Access the Security service group.
+     *
+     * Available operations:
+     *   - `checkVpn({ ip })` — VPN/Proxy/Tor detection
+     *   - `checkBurnerEmail({ email })` — Disposable email detection
+     *
+     * @example
+     * ```ts
+     * const vpn = await apix.security().checkVpn({ ip: '8.8.8.8' });
+     * const email = await apix.security().checkBurnerEmail({ email: 'test@mailinator.com' });
+     * ```
+     */
+    security(): SecurityService;
+    /**
+     * Access the Currency service group.
+     *
+     * Available operations:
+     *   - `getCodes()` — All supported currency codes
+     *   - `getLatestRates(base)` — Rates from a base currency
+     *   - `getPairRate(base, target)` — Exchange rate between two currencies
+     *   - `convert(base, target, amount)` — Convert an amount
+     *
+     * @example
+     * ```ts
+     * const codes = await apix.currency().getCodes();
+     * const rates = await apix.currency().getLatestRates('USD');
+     * const pair  = await apix.currency().getPairRate('USD', 'EUR');
+     * const conv  = await apix.currency().convert('USD', 'LKR', 100);
+     * ```
+     */
+    currency(): CurrencyService;
     /**
      * Make a raw API call to any APIX endpoint.
      *

@@ -29,6 +29,16 @@ export declare class HttpClient {
      */
     post(path: string, payload?: Record<string, unknown>, extraHeaders?: Record<string, string>): Promise<ApiResponse | BinaryResponse>;
     /**
+     * Execute a GET request and return a typed response object.
+     *
+     * Used by endpoints that accept path parameters instead of JSON bodies
+     * (e.g. currency conversion endpoints).
+     *
+     * @throws {ApixError}         On any API-level error.
+     * @throws {ApixNetworkError}  On transport-level failure (no HTTP response).
+     */
+    get(path: string, query?: Record<string, string>, extraHeaders?: Record<string, string>): Promise<ApiResponse | BinaryResponse>;
+    /**
      * Stage a provider override for the next request only.
      * Called by AbstractService.withProvider(). Auto-cleared after dispatch.
      *

@@ -41,5 +41,18 @@ export class AbstractService {
     async post(path, payload = {}, extraHeaders = {}) {
         return this.http.post(path, payload, extraHeaders);
     }
+    /**
+     * Dispatch a GET request via the shared HttpClient.
+     *
+     * Used by endpoints that accept path parameters instead of JSON bodies
+     * (e.g. currency conversion endpoints).
+     *
+     * @param path         Endpoint path (any format — HttpClient normalizes it).
+     * @param query        Optional query string parameters.
+     * @param extraHeaders Additional per-request headers.
+     */
+    async get(path, query = {}, extraHeaders = {}) {
+        return this.http.get(path, query, extraHeaders);
+    }
 }
 //# sourceMappingURL=AbstractService.js.map

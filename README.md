@@ -4,6 +4,8 @@ Official TypeScript/JavaScript SDK for the [AvraAPI (APIX)](https://avraapi.com)
 
 Zero framework dependencies — works in any Node.js 18+ project.
 
+> **Official SDK Documentation:** [https://avraapi.com/developers/sdks](https://avraapi.com/developers/sdks)
+
 ```bash
 npm install @avraapi/node-sdk
 ```
@@ -27,6 +29,8 @@ const apix = new ApixClient({
 | Location | `apix.location()` | IP geolocation lookups |
 | SMS | `apix.sms()` | Single, bulk-same, bulk-different, balance |
 | Utilities | `apix.utilities()` | QR codes, barcodes, **PDF generation** |
+| Security | `apix.security()` | VPN & Proxy Shield, Burner Email Detection |
+| Currency | `apix.currency()` | Currency codes, live rates, pair rates, conversion |
 
 ---
 
@@ -153,6 +157,72 @@ res.send(bin.getBuffer());
 
 ---
 
+## VPN & Proxy Shield
+
+Detect VPNs, proxies, Tor exit nodes, iCloud Private Relay, and hosting/datacenter IPs.
+
+```ts
+const result = await apix.security().checkVpn({ ip: '8.8.8.8' });
+
+console.log(result.data.ip_address);    // '8.8.8.8'
+console.log(result.data.is_vpn);        // false
+console.log(result.data.is_proxy);      // false
+console.log(result.data.is_tor);        // false
+console.log(result.data.country_code);  // 'US'
+console.log(result.data.network_name);  // 'Google LLC'
+
+// Quick threat check:
+const d = result.data;
+const isThreat = d.is_vpn || d.is_proxy || d.is_tor;
+```
+
+---
+
+## Burner Email Shield
+
+Detect temporary and disposable email addresses (7,000+ domains).
+
+```ts
+const result = await apix.security().checkBurnerEmail({ email: 'user@mailinator.com' });
+
+console.log(result.data.is_disposable);     // true
+console.log(result.data.source);            // 'global'
+console.log(result.data.execution_time_ms); // 0.42
+
+// Guard a registration:
+if (result.data.is_disposable) {
+  throw new Error('Disposable emails are not allowed.');
+}
+```
+
+---
+
+## Multi-Currency Rates & Conversion
+
+Free currency exchange rate API — 160+ currencies, 2-hour cached rates, zero credit cost.
+
+```ts
+// Get all currency codes
+const codes = await apix.currency().getCodes();
+console.log(codes.data.count); // 161
+
+// Get latest rates from a base currency
+const rates = await apix.currency().getLatestRates('USD');
+console.log(rates.data.rates['EUR']); // 0.89123456
+console.log(rates.data.rates['LKR']); // 298.50000000
+
+// Get pair rate
+const pair = await apix.currency().getPairRate('USD', 'EUR');
+console.log(pair.data.rate); // 0.89123456
+
+// Convert an amount
+const conv = await apix.currency().convert('USD', 'LKR', 100);
+console.log(`${conv.data.amount} ${conv.data.base} = ${conv.data.conversion_result} ${conv.data.target}`);
+// "100 USD = 29850.000000 LKR"
+```
+
+---
+
 ## Privacy Mode
 
 For sensitive documents, enable privacy mode to exclude HTML content from observability logs:
@@ -216,8 +286,25 @@ import type {
   PdfPageSize,
   PdfOrientation,
   PdfMargins,
+  CheckVpnParams,
+  VpnShieldData,
+  CheckBurnerEmailParams,
+  BurnerEmailData,
+  CurrencyCodeEntry,
+  CurrencyCodesData,
+  CurrencyLatestRatesData,
+  CurrencyPairRateData,
+  CurrencyConvertData,
 } from '@avraapi/node-sdk';
 ```
+
+---
+
+## Documentation
+
+For full API reference, usage guides, and interactive examples, visit:
+
+**[https://avraapi.com/developers/sdks](https://avraapi.com/developers/sdks)**
 
 ---
 

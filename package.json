@@ -1,6 +1,6 @@
 {
   "name": "@avraapi/node-sdk",
-  "version": "1.0.2",
+  "version": "1.1.2",
   "description": "Official TypeScript/JavaScript SDK for the APIX (AvraAPI) enterprise API gateway. Zero framework dependencies — works in any Node.js 18+ project.",
   "author": "Fidex Developers (Pvt) Ltd <dev@fidex.lk> (https://avraapi.com)",
   "license": "MIT",

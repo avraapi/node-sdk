@@ -24,6 +24,8 @@
  *   apix.location()   — IP geolocation lookup
  *   apix.sms()        — SMS send / balance operations
  *   apix.utilities()  — QR codes, barcodes, PDF generation
+ *   apix.security()   — VPN/Proxy Shield, Burner Email Detection
+ *   apix.currency()   — Multi-currency exchange rates & conversion
  *
  * ── Provider Override (fluent) ────────────────────────────────────────────────
  *
@@ -48,6 +50,8 @@ import { HttpClient } from './HttpClient.js';
 import { LocationService } from './services/LocationService.js';
 import { SmsService } from './services/SmsService.js';
 import { UtilitiesService } from './services/UtilitiesService.js';
+import { SecurityService } from './services/SecurityService.js';
+import { CurrencyService } from './services/CurrencyService.js';
 export class ApixClient {
     /** Resolved, immutable configuration. Useful for debugging. */
     config;
@@ -56,6 +60,8 @@ export class ApixClient {
     _location = null;
     _sms = null;
     _utilities = null;
+    _security = null;
+    _currency = null;
     /**
      * Create a new APIX client.
      *
@@ -143,6 +149,42 @@ export class ApixClient {
     utilities() {
         return (this._utilities ??= new UtilitiesService(this.http));
     }
+    /**
+     * Access the Security service group.
+     *
+     * Available operations:
+     *   - `checkVpn({ ip })` — VPN/Proxy/Tor detection
+     *   - `checkBurnerEmail({ email })` — Disposable email detection
+     *
+     * @example
+     * ```ts
+     * const vpn = await apix.security().checkVpn({ ip: '8.8.8.8' });
+     * const email = await apix.security().checkBurnerEmail({ email: 'test@mailinator.com' });
+     * ```
+     */
+    security() {
+        return (this._security ??= new SecurityService(this.http));
+    }
+    /**
+     * Access the Currency service group.
+     *
+     * Available operations:
+     *   - `getCodes()` — All supported currency codes
+     *   - `getLatestRates(base)` — Rates from a base currency
+     *   - `getPairRate(base, target)` — Exchange rate between two currencies
+     *   - `convert(base, target, amount)` — Convert an amount
+     *
+     * @example
+     * ```ts
+     * const codes = await apix.currency().getCodes();
+     * const rates = await apix.currency().getLatestRates('USD');
+     * const pair  = await apix.currency().getPairRate('USD', 'EUR');
+     * const conv  = await apix.currency().convert('USD', 'LKR', 100);
+     * ```
+     */
+    currency() {
+        return (this._currency ??= new CurrencyService(this.http));
+    }
     // ── Universal Call ────────────────────────────────────────────────────────────
     /**
      * Make a raw API call to any APIX endpoint.
@@ -182,11 +224,14 @@ export class ApixClient {
      */
     async call(method, path, payload = {}) {
         const normalizedMethod = method.toUpperCase().trim();
-        if (normalizedMethod !== 'POST') {
-            throw new Error(`APIX SDK: Unsupported HTTP method '${method}'. ` +
-                `The APIX gateway uses POST for all operations.`);
+        switch (normalizedMethod) {
+            case 'GET':
+                return this.http.get(path, payload);
+            case 'POST':
+                return this.http.post(path, payload);
+            default:
+                throw new Error(`APIX SDK: Unsupported HTTP method '${method}'. Supported methods: GET, POST.`);
         }
-        return this.http.post(path, payload);
     }
 }
 //# sourceMappingURL=ApixClient.js.map

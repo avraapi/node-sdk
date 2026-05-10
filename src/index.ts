@@ -26,6 +26,8 @@
  *     LocationService
  *     SmsService
  *     UtilitiesService
+ *     SecurityService
+ *     CurrencyService
  *
  *   Types (all parameter + response interfaces):
  *     LookupIpParams, GeoIpData
@@ -35,6 +37,10 @@
  *     GenerateBarcodeParams, BarcodeType, BarcodeFormat
  *     GeneratePdfParams, GeneratePdfFromBase64Params, PdfPageSize, PdfOrientation
  *     PdfResponseType, PdfMargins, PdfBase64Data
+ *     CheckVpnParams, VpnShieldData
+ *     CheckBurnerEmailParams, BurnerEmailData
+ *     CurrencyCodeEntry, CurrencyCodesData, CurrencyLatestRatesData
+ *     CurrencyPairRateData, CurrencyConvertData
  *
  * Usage:
  *   import { ApixClient, ApixValidationError, BinaryResponse } from '@avraapi/apix-sdk';
@@ -65,6 +71,8 @@ export type { ApixErrorPayload }            from './errors/ApixErrors.js';
 export { LocationService }                  from './services/LocationService.js';
 export { SmsService }                       from './services/SmsService.js';
 export { UtilitiesService }                 from './services/UtilitiesService.js';
+export { SecurityService }                  from './services/SecurityService.js';
+export { CurrencyService }                  from './services/CurrencyService.js';
 
 // ── Service parameter / response types ───────────────────────────────────────
 export type {
@@ -97,3 +105,18 @@ export type {
   PdfMargins,
   PdfBase64Data,
 } from './services/UtilitiesService.js';
+
+export type {
+  CheckVpnParams,
+  CheckBurnerEmailParams,
+  VpnShieldData,
+  BurnerEmailData,
+} from './services/SecurityService.js';
+
+export type {
+  CurrencyCodeEntry,
+  CurrencyCodesData,
+  CurrencyLatestRatesData,
+  CurrencyPairRateData,
+  CurrencyConvertData,
+} from './services/CurrencyService.js';

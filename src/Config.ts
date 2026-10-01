@@ -75,6 +75,8 @@ export class Config {
   public readonly timeout:    number;
 
   public constructor(options: ApixClientOptions = {}) {
+    this.assertServerRuntime();
+
     const projectKey = this.resolve(options.projectKey, 'APIX_PROJECT_KEY');
     if (projectKey == null) {
       throw new Error(
@@ -108,6 +110,27 @@ export class Config {
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
+
+  /**
+   * This SDK carries a Client Secret and is intentionally server-only.
+   *
+   * The runtime guard protects against the common mistake of instantiating the
+   * client in a browser bundle. It does not replace normal secret-management
+   * controls: credentials must still remain in trusted backend environment
+   * configuration and never be embedded in frontend source code.
+   */
+  private assertServerRuntime(): void {
+    const runtime = globalThis as typeof globalThis & {
+      document?: unknown;
+      window?: unknown;
+    };
+
+    if (runtime.window !== undefined && runtime.document !== undefined) {
+      throw new Error(
+        'AvraAPI Node.js SDK is server-only. Do not create ApixClient in a browser bundle or expose an API secret to the client.',
+      );
+    }
+  }
 
   /**
    * Resolve a value from an explicit option first, then from process.env.

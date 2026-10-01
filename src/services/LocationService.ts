@@ -88,14 +88,13 @@ export class LocationService extends AbstractService {
   public async lookupIp(params: LookupIpParams): Promise<ApiResponse<GeoIpData>> {
     const { ip, privacyMode = false } = params;
 
-    const extraHeaders: Record<string, string> = privacyMode
-      ? { 'X-Privacy-Mode': '1' }
-      : {};
+    if (privacyMode) {
+      this.withPrivacyMode();
+    }
 
     const response = await this.post(
       '/location/lookup',
       { ip },
-      extraHeaders,
     );
 
     return response as unknown as ApiResponse<GeoIpData>;

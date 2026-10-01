@@ -60,6 +60,15 @@ export declare class Config {
     readonly timeout: number;
     constructor(options?: ApixClientOptions);
     /**
+     * This SDK carries a Client Secret and is intentionally server-only.
+     *
+     * The runtime guard protects against the common mistake of instantiating the
+     * client in a browser bundle. It does not replace normal secret-management
+     * controls: credentials must still remain in trusted backend environment
+     * configuration and never be embedded in frontend source code.
+     */
+    private assertServerRuntime;
+    /**
      * Resolve a value from an explicit option first, then from process.env.
      * Returns undefined when neither source has a non-empty string value.
      */

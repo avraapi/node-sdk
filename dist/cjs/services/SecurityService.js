@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/services/SecurityService.ts
  *
@@ -11,9 +12,11 @@
  *
  * @see https://avraapi.com/docs#tag/Security
  */
-import { AbstractService } from './AbstractService.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SecurityService = void 0;
+const AbstractService_js_1 = require("./AbstractService.js");
 // ── Service ──────────────────────────────────────────────────────────────────
-export class SecurityService extends AbstractService {
+class SecurityService extends AbstractService_js_1.AbstractService {
     // ── VPN & Proxy Shield ──────────────────────────────────────────────────────
     /**
      * Check whether an IP address is associated with a VPN, proxy, Tor node,
@@ -49,4 +52,5 @@ export class SecurityService extends AbstractService {
         return this.post('/security/burner-email-shield', { email: params.email });
     }
 }
+exports.SecurityService = SecurityService;
 //# sourceMappingURL=SecurityService.js.map

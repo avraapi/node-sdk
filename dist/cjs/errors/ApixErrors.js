@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/errors/ApixErrors.ts
  *
@@ -15,6 +16,10 @@
  *       ├── ApixValidationError          (HTTP 422) + validationErrors field
  *       ├── ApixRateLimitError           (HTTP 429)
  *       ├── ApixServiceUnavailableError  (HTTP 503)
+ *       ├── PaymentAccessError            (UPG entitlement/configuration access)
+ *       ├── PaymentConfigurationError     (UPG checkout configuration)
+ *       ├── PaymentProviderError          (provider-side payment failure)
+ *       ├── PaymentVerificationError      (untrusted callback verification)
  *       └── ApixNetworkError             (transport failure, no HTTP response)
  *
  * Usage:
@@ -28,6 +33,8 @@
  *     }
  *   }
  */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ApixNetworkError = exports.PaymentVerificationError = exports.PaymentProviderError = exports.PaymentConfigurationError = exports.PaymentAccessError = exports.ApixServiceUnavailableError = exports.ApixRateLimitError = exports.ApixValidationError = exports.ApixInsufficientFundsError = exports.ApixAuthenticationError = exports.ApixError = void 0;
 // ─────────────────────────────────────────────────────────────────────────────
 // Base error class
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +46,7 @@
  *     if (err instanceof ApixError) { ... }
  *   }
  */
-export class ApixError extends Error {
+class ApixError extends Error {
     /** Machine-readable error code from the APIX gateway error envelope. */
     errorCode;
     /** APIX request trace ID. Null when the error occurs before the gateway assigns one. */
@@ -72,6 +79,7 @@ export class ApixError extends Error {
         return new ApixError(message, httpStatus, errorCode, requestId, payload);
     }
 }
+exports.ApixError = ApixError;
 // ─────────────────────────────────────────────────────────────────────────────
 // HTTP 401 — Authentication failure
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,7 +92,7 @@ export class ApixError extends Error {
  *   - Project is inactive
  *   - Wrong X-ENV for the credential
  */
-export class ApixAuthenticationError extends ApixError {
+class ApixAuthenticationError extends ApixError {
     static fromPayload(httpStatus, payload) {
         const errorCode = payload.error?.code ?? 'unauthorized';
         const message = payload.error?.message ?? 'Authentication failed.';
@@ -92,6 +100,7 @@ export class ApixAuthenticationError extends ApixError {
         return new ApixAuthenticationError(message, httpStatus, errorCode, requestId, payload);
     }
 }
+exports.ApixAuthenticationError = ApixAuthenticationError;
 // ─────────────────────────────────────────────────────────────────────────────
 // HTTP 402 — Insufficient funds
 // ─────────────────────────────────────────────────────────────────────────────
@@ -101,7 +110,7 @@ export class ApixAuthenticationError extends ApixError {
  * Your APIX wallet balance is too low to complete the request.
  * Top up your balance in the APIX dashboard before retrying.
  */
-export class ApixInsufficientFundsError extends ApixError {
+class ApixInsufficientFundsError extends ApixError {
     static fromPayload(httpStatus, payload) {
         const errorCode = payload.error?.code ?? 'insufficient_funds';
         const message = payload.error?.message ?? 'Insufficient wallet balance.';
@@ -109,6 +118,7 @@ export class ApixInsufficientFundsError extends ApixError {
         return new ApixInsufficientFundsError(message, httpStatus, errorCode, requestId, payload);
     }
 }
+exports.ApixInsufficientFundsError = ApixInsufficientFundsError;
 // ─────────────────────────────────────────────────────────────────────────────
 // HTTP 422 — Validation failure
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,7 +139,7 @@ export class ApixInsufficientFundsError extends ApixError {
  *     }
  *   }
  */
-export class ApixValidationError extends ApixError {
+class ApixValidationError extends ApixError {
     /** Field-level validation errors keyed by field name. */
     validationErrors;
     constructor(message, httpStatus, errorCode, requestId, payload, validationErrors = {}) {
@@ -153,6 +163,7 @@ export class ApixValidationError extends ApixError {
         return new ApixValidationError(message, httpStatus, errorCode, requestId, payload, validationErrors);
     }
 }
+exports.ApixValidationError = ApixValidationError;
 // ─────────────────────────────────────────────────────────────────────────────
 // HTTP 429 — Rate limit exceeded
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,7 +173,7 @@ export class ApixValidationError extends ApixError {
  * You have exceeded the rate limit configured on your project integration.
  * Implement exponential back-off before retrying.
  */
-export class ApixRateLimitError extends ApixError {
+class ApixRateLimitError extends ApixError {
     static fromPayload(httpStatus, payload) {
         const errorCode = payload.error?.code ?? 'rate_limit_exceeded';
         const message = payload.error?.message ?? 'Rate limit exceeded.';
@@ -170,6 +181,7 @@ export class ApixRateLimitError extends ApixError {
         return new ApixRateLimitError(message, httpStatus, errorCode, requestId, payload);
     }
 }
+exports.ApixRateLimitError = ApixRateLimitError;
 // ─────────────────────────────────────────────────────────────────────────────
 // HTTP 503 — Service unavailable (Kill Switch)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -180,13 +192,48 @@ export class ApixRateLimitError extends ApixError {
  * (project_paused). Credentials are valid — the service is deliberately
  * paused. Retry later or contact your project owner.
  */
-export class ApixServiceUnavailableError extends ApixError {
+class ApixServiceUnavailableError extends ApixError {
     static fromPayload(httpStatus, payload) {
         const errorCode = payload.error?.code ?? 'service_unavailable';
         const message = payload.error?.message ?? 'Service temporarily unavailable.';
         const requestId = payload.request_id ?? null;
         return new ApixServiceUnavailableError(message, httpStatus, errorCode, requestId, payload);
     }
+}
+exports.ApixServiceUnavailableError = ApixServiceUnavailableError;
+// ─────────────────────────────────────────────────────────────────────────────
+// Universal Payment Gateway errors
+// ─────────────────────────────────────────────────────────────────────────────
+/** The authenticated project cannot currently access Universal Payment Gateway checkout. */
+class PaymentAccessError extends ApixError {
+    static fromPayload(httpStatus, payload) {
+        return paymentErrorFromPayload(PaymentAccessError, httpStatus, payload);
+    }
+}
+exports.PaymentAccessError = PaymentAccessError;
+/** The selected payment gateway or checkout mode is not configured for the project. */
+class PaymentConfigurationError extends ApixError {
+    static fromPayload(httpStatus, payload) {
+        return paymentErrorFromPayload(PaymentConfigurationError, httpStatus, payload);
+    }
+}
+exports.PaymentConfigurationError = PaymentConfigurationError;
+/** A payment provider rejected or could not complete a gateway operation. */
+class PaymentProviderError extends ApixError {
+    static fromPayload(httpStatus, payload) {
+        return paymentErrorFromPayload(PaymentProviderError, httpStatus, payload);
+    }
+}
+exports.PaymentProviderError = PaymentProviderError;
+/** A callback/return payload could not be authenticated as a payment result. */
+class PaymentVerificationError extends ApixError {
+    static fromPayload(httpStatus, payload) {
+        return paymentErrorFromPayload(PaymentVerificationError, httpStatus, payload);
+    }
+}
+exports.PaymentVerificationError = PaymentVerificationError;
+function paymentErrorFromPayload(ErrorClass, httpStatus, payload) {
+    return new ErrorClass(payload.error?.message ?? 'Payment operation failed.', httpStatus, payload.error?.code ?? 'payment_error', payload.request_id ?? null, payload);
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // Network / transport failure
@@ -202,7 +249,7 @@ export class ApixServiceUnavailableError extends ApixError {
  *   - TLS handshake failure
  *   - Laravel Sail not running during local development
  */
-export class ApixNetworkError extends ApixError {
+class ApixNetworkError extends ApixError {
     constructor(message, cause) {
         super(message, 0, 'network_error', null, {});
         Object.setPrototypeOf(this, new.target.prototype);
@@ -211,4 +258,5 @@ export class ApixNetworkError extends ApixError {
         }
     }
 }
+exports.ApixNetworkError = ApixNetworkError;
 //# sourceMappingURL=ApixErrors.js.map

@@ -15,6 +15,10 @@
  *       ├── ApixValidationError          (HTTP 422) + validationErrors field
  *       ├── ApixRateLimitError           (HTTP 429)
  *       ├── ApixServiceUnavailableError  (HTTP 503)
+ *       ├── PaymentAccessError            (UPG entitlement/configuration access)
+ *       ├── PaymentConfigurationError     (UPG checkout configuration)
+ *       ├── PaymentProviderError          (provider-side payment failure)
+ *       ├── PaymentVerificationError      (untrusted callback verification)
  *       └── ApixNetworkError             (transport failure, no HTTP response)
  *
  * Usage:
@@ -126,6 +130,22 @@ export declare class ApixRateLimitError extends ApixError {
  */
 export declare class ApixServiceUnavailableError extends ApixError {
     static fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): ApixServiceUnavailableError;
+}
+/** The authenticated project cannot currently access Universal Payment Gateway checkout. */
+export declare class PaymentAccessError extends ApixError {
+    static fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): PaymentAccessError;
+}
+/** The selected payment gateway or checkout mode is not configured for the project. */
+export declare class PaymentConfigurationError extends ApixError {
+    static fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): PaymentConfigurationError;
+}
+/** A payment provider rejected or could not complete a gateway operation. */
+export declare class PaymentProviderError extends ApixError {
+    static fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): PaymentProviderError;
+}
+/** A callback/return payload could not be authenticated as a payment result. */
+export declare class PaymentVerificationError extends ApixError {
+    static fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): PaymentVerificationError;
 }
 /**
  * Thrown when a network-level error prevents communication with the gateway.

@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/services/AbstractService.ts
  *
@@ -7,7 +8,9 @@
  *   - withProvider() — fluent provider override (consumed once per request)
  *   - post()         — delegates to the shared HttpClient instance
  */
-export class AbstractService {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AbstractService = void 0;
+class AbstractService {
     http;
     constructor(http) {
         this.http = http;
@@ -29,6 +32,27 @@ export class AbstractService {
      */
     withProvider(providerCode) {
         this.http.setProviderOverride(providerCode.trim());
+        return this;
+    }
+    /**
+     * Enable AvraAPI Privacy Mode for the next request only.
+     *
+     * The SDK sends `X-Privacy-Mode: 1` and clears the flag immediately after
+     * dispatch. Privacy Mode preserves normal routing, billing, and usage
+     * tracking while suppressing request and response payload storage according
+     * to the AvraAPI privacy guarantee.
+     *
+     * @returns `this` — fluent, for chaining.
+     *
+     * @example
+     * ```ts
+     * const response = await apix.security()
+     *   .withPrivacyMode()
+     *   .checkBurnerEmail({ email: 'customer@example.com' });
+     * ```
+     */
+    withPrivacyMode() {
+        this.http.enablePrivacyMode();
         return this;
     }
     /**
@@ -55,4 +79,5 @@ export class AbstractService {
         return this.http.get(path, query, extraHeaders);
     }
 }
+exports.AbstractService = AbstractService;
 //# sourceMappingURL=AbstractService.js.map

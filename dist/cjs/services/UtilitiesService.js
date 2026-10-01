@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/services/UtilitiesService.ts
  *
@@ -13,11 +14,13 @@
  *
  * @see https://avraapi.com/docs#tag/Utilities
  */
-import { AbstractService } from './AbstractService.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UtilitiesService = void 0;
+const AbstractService_js_1 = require("./AbstractService.js");
 // ─────────────────────────────────────────────────────────────────────────────
 // UtilitiesService
 // ─────────────────────────────────────────────────────────────────────────────
-export class UtilitiesService extends AbstractService {
+class UtilitiesService extends AbstractService_js_1.AbstractService {
     // ── QR Code ─────────────────────────────────────────────────────────────────
     /**
      * Generate a QR code from any text, URL, or vCard payload.
@@ -64,6 +67,7 @@ export class UtilitiesService extends AbstractService {
      * ```
      */
     async generateQr(params) {
+        this.enablePrivacyModeFrom(params.privacyMode);
         const payload = this.stripNulls({
             data: params.data,
             format: params.format ?? 'png',
@@ -72,7 +76,6 @@ export class UtilitiesService extends AbstractService {
             background_color: params.backgroundColor,
             logo_url: params.logoUrl,
             logo_size_percent: params.logoSizePercent,
-            privacy_mode: params.privacyMode === true ? true : undefined,
         });
         return this.post('/utilities/qr/generate', payload);
     }
@@ -105,13 +108,13 @@ export class UtilitiesService extends AbstractService {
      * ```
      */
     async generateBarcode(params) {
+        this.enablePrivacyModeFrom(params.privacyMode);
         const payload = this.stripNulls({
             data: params.data,
             type: params.type ?? 'C128',
             format: params.format ?? 'png',
             height: params.height,
             width_factor: params.widthFactor,
-            privacy_mode: params.privacyMode === true ? true : undefined,
         });
         const response = await this.post('/utilities/barcode/generate', payload);
         return response;
@@ -165,6 +168,7 @@ export class UtilitiesService extends AbstractService {
      * ```
      */
     async generatePdf(params) {
+        this.enablePrivacyModeFrom(params.privacyMode);
         const payload = this.stripNulls({
             html: params.html,
             is_base64: params.isBase64 === true ? true : undefined,
@@ -172,7 +176,6 @@ export class UtilitiesService extends AbstractService {
             page_size: params.pageSize ?? 'A4',
             orientation: params.orientation ?? 'portrait',
             margins: params.margins,
-            privacy_mode: params.privacyMode === true ? true : undefined,
         });
         return this.post('/utilities/pdf/generate', payload);
     }
@@ -225,5 +228,11 @@ export class UtilitiesService extends AbstractService {
     stripNulls(obj) {
         return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== null));
     }
+    enablePrivacyModeFrom(privacyMode) {
+        if (privacyMode) {
+            this.withPrivacyMode();
+        }
+    }
 }
+exports.UtilitiesService = UtilitiesService;
 //# sourceMappingURL=UtilitiesService.js.map

@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/HttpClient.ts
  *
@@ -12,26 +13,63 @@
  *
  * @internal — consume only through ApixClient or a Service class.
  */
-import axios, { isAxiosError, } from 'axios';
-import { ApiResponse } from './responses/ApiResponse.js';
-import { BinaryResponse } from './responses/BinaryResponse.js';
-import { ApixError, ApixAuthenticationError, ApixInsufficientFundsError, ApixValidationError, ApixRateLimitError, ApixServiceUnavailableError, ApixNetworkError, } from './errors/ApixErrors.js';
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HttpClient = void 0;
+const axios_1 = __importStar(require("axios"));
+const ApiResponse_js_1 = require("./responses/ApiResponse.js");
+const BinaryResponse_js_1 = require("./responses/BinaryResponse.js");
+const ApixErrors_js_1 = require("./errors/ApixErrors.js");
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 const BINARY_CONTENT_TYPES = ['image/png', 'image/svg+xml', 'application/pdf'];
-const SDK_VERSION = '1.1.2';
+const SDK_VERSION = '1.2.0';
 // ─────────────────────────────────────────────────────────────────────────────
 // HttpClient
 // ─────────────────────────────────────────────────────────────────────────────
-export class HttpClient {
+class HttpClient {
     config;
     axiosInstance;
     /** Per-request provider override — consumed once, then cleared. */
     pendingProviderOverride = null;
+    /** Per-request privacy control — consumed once, then cleared. */
+    pendingPrivacyMode = false;
     constructor(config) {
         this.config = config;
-        this.axiosInstance = axios.create({
+        this.axiosInstance = axios_1.default.create({
             timeout: config.timeout,
             // We handle HTTP errors manually to produce rich typed errors.
             // validateStatus returns true for all codes so Axios never throws.
@@ -43,7 +81,7 @@ export class HttpClient {
             headers: {
                 'Accept': 'application/json, image/png, image/svg+xml, application/pdf',
                 'Content-Type': 'application/json',
-                'User-Agent': `avraapi/apix-node-sdk/${SDK_VERSION} Node/${process.version}`,
+                'User-Agent': `avraapi/node-sdk/${SDK_VERSION} Node/${process.version}`,
             },
         });
     }
@@ -71,12 +109,12 @@ export class HttpClient {
             // Axios throws here only for network-level failures (ECONNREFUSED,
             // ETIMEDOUT, etc.) — not for HTTP 4xx/5xx which are caught by
             // validateStatus: () => true above.
-            if (isAxiosError(err) && err.request != null && err.response == null) {
-                throw new ApixNetworkError(`Could not connect to APIX gateway at '${url}'. ` +
+            if ((0, axios_1.isAxiosError)(err) && err.request != null && err.response == null) {
+                throw new ApixErrors_js_1.ApixNetworkError(`Could not connect to APIX gateway at '${url}'. ` +
                     `Check baseUrl and ensure the server is reachable. ` +
                     `Original error: ${err.message}`, err);
             }
-            throw new ApixNetworkError(`APIX request failed: ${err instanceof Error ? err.message : String(err)}`, err instanceof Error ? err : undefined);
+            throw new ApixErrors_js_1.ApixNetworkError(`APIX request failed: ${err instanceof Error ? err.message : String(err)}`, err instanceof Error ? err : undefined);
         }
         return this.handleResponse(response);
     }
@@ -101,12 +139,12 @@ export class HttpClient {
             });
         }
         catch (err) {
-            if (isAxiosError(err) && err.request != null && err.response == null) {
-                throw new ApixNetworkError(`Could not connect to APIX gateway at '${url}'. ` +
+            if ((0, axios_1.isAxiosError)(err) && err.request != null && err.response == null) {
+                throw new ApixErrors_js_1.ApixNetworkError(`Could not connect to APIX gateway at '${url}'. ` +
                     `Check baseUrl and ensure the server is reachable. ` +
                     `Original error: ${err.message}`, err);
             }
-            throw new ApixNetworkError(`APIX request failed: ${err instanceof Error ? err.message : String(err)}`, err instanceof Error ? err : undefined);
+            throw new ApixErrors_js_1.ApixNetworkError(`APIX request failed: ${err instanceof Error ? err.message : String(err)}`, err instanceof Error ? err : undefined);
         }
         return this.handleResponse(response);
     }
@@ -119,6 +157,18 @@ export class HttpClient {
     setProviderOverride(providerCode) {
         this.pendingProviderOverride = providerCode.trim();
     }
+    /**
+     * Enable AvraAPI Privacy Mode for the next request only.
+     *
+     * Called by AbstractService.withPrivacyMode(). The request still follows the
+     * normal authentication, routing, billing, and usage flow; the gateway uses
+     * X-Privacy-Mode to apply the platform privacy guarantee.
+     *
+     * @internal
+     */
+    enablePrivacyMode() {
+        this.pendingPrivacyMode = true;
+    }
     // ── Response handling ───────────────────────────────────────────────────────
     handleResponse(response) {
         const status = response.status;
@@ -127,26 +177,39 @@ export class HttpClient {
         // ── Binary success ──────────────────────────────────────────────────────
         if (status >= 200 && status < 300 && this.isBinary(contentType)) {
             const requestId = this.extractRequestId(response);
-            return new BinaryResponse(bodyBuffer, contentType, status, requestId);
+            return new BinaryResponse_js_1.BinaryResponse(bodyBuffer, contentType, status, requestId);
         }
         // ── Parse as JSON ───────────────────────────────────────────────────────
         const decoded = this.parseJson(bodyBuffer, status);
         // ── JSON success ────────────────────────────────────────────────────────
         if (status >= 200 && status < 300) {
-            return new ApiResponse(decoded, status);
+            return new ApiResponse_js_1.ApiResponse(decoded, status);
         }
         // ── Error — map to typed error class ───────────────────────────────────
         throw this.mapError(status, decoded);
     }
     // ── Error mapping ───────────────────────────────────────────────────────────
     mapError(httpStatus, payload) {
+        const code = payload.error?.code ?? '';
+        if (code.startsWith('payment_callback_')) {
+            return ApixErrors_js_1.PaymentVerificationError.fromPayload(httpStatus, payload);
+        }
+        if (code.startsWith('upg_') || code === 'payment_configuration_not_available' || code === 'project_paused') {
+            return ApixErrors_js_1.PaymentAccessError.fromPayload(httpStatus, payload);
+        }
+        if (code.startsWith('payment_configuration') || code === 'payment_gateway_not_available' || code === 'payment_mode_not_available') {
+            return ApixErrors_js_1.PaymentConfigurationError.fromPayload(httpStatus, payload);
+        }
+        if (code.startsWith('payment_')) {
+            return ApixErrors_js_1.PaymentProviderError.fromPayload(httpStatus, payload);
+        }
         switch (httpStatus) {
-            case 401: return ApixAuthenticationError.fromPayload(httpStatus, payload);
-            case 402: return ApixInsufficientFundsError.fromPayload(httpStatus, payload);
-            case 422: return ApixValidationError.fromPayload(httpStatus, payload);
-            case 429: return ApixRateLimitError.fromPayload(httpStatus, payload);
-            case 503: return ApixServiceUnavailableError.fromPayload(httpStatus, payload);
-            default: return ApixError.fromPayload(httpStatus, payload);
+            case 401: return ApixErrors_js_1.ApixAuthenticationError.fromPayload(httpStatus, payload);
+            case 402: return ApixErrors_js_1.ApixInsufficientFundsError.fromPayload(httpStatus, payload);
+            case 422: return ApixErrors_js_1.ApixValidationError.fromPayload(httpStatus, payload);
+            case 429: return ApixErrors_js_1.ApixRateLimitError.fromPayload(httpStatus, payload);
+            case 503: return ApixErrors_js_1.ApixServiceUnavailableError.fromPayload(httpStatus, payload);
+            default: return ApixErrors_js_1.ApixError.fromPayload(httpStatus, payload);
         }
     }
     // ── Smart path normalization ─────────────────────────────────────────────────
@@ -197,6 +260,10 @@ export class HttpClient {
         if (this.pendingProviderOverride != null) {
             headers['X-Provider-Override'] = this.pendingProviderOverride;
             this.pendingProviderOverride = null;
+        }
+        if (this.pendingPrivacyMode) {
+            headers['X-Privacy-Mode'] = '1';
+            this.pendingPrivacyMode = false;
         }
         return headers;
     }
@@ -249,4 +316,5 @@ export class HttpClient {
         }
     }
 }
+exports.HttpClient = HttpClient;
 //# sourceMappingURL=HttpClient.js.map

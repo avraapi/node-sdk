@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/Config.ts
  *
@@ -16,10 +17,12 @@
  *   APIX_BASE_URL / baseUrl — Full base URL            (default: 'https://avraapi.com/api/v1')
  *   APIX_TIMEOUT / timeout  — Request timeout (ms)    (default: 30_000)
  */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Config = void 0;
 // ─────────────────────────────────────────────────────────────────────────────
 // Config class
 // ─────────────────────────────────────────────────────────────────────────────
-export class Config {
+class Config {
     static DEFAULT_BASE_URL = 'https://avraapi.com/api/v1';
     static DEFAULT_TIMEOUT = 30_000; // milliseconds
     projectKey;
@@ -28,6 +31,7 @@ export class Config {
     baseUrl;
     timeout;
     constructor(options = {}) {
+        this.assertServerRuntime();
         const projectKey = this.resolve(options.projectKey, 'APIX_PROJECT_KEY');
         if (projectKey == null) {
             throw new Error('APIX SDK: projectKey is required. ' +
@@ -48,6 +52,20 @@ export class Config {
         this.timeout = rawTimeout != null ? parseInt(rawTimeout, 10) : Config.DEFAULT_TIMEOUT;
     }
     // ── Private helpers ─────────────────────────────────────────────────────────
+    /**
+     * This SDK carries a Client Secret and is intentionally server-only.
+     *
+     * The runtime guard protects against the common mistake of instantiating the
+     * client in a browser bundle. It does not replace normal secret-management
+     * controls: credentials must still remain in trusted backend environment
+     * configuration and never be embedded in frontend source code.
+     */
+    assertServerRuntime() {
+        const runtime = globalThis;
+        if (runtime.window !== undefined && runtime.document !== undefined) {
+            throw new Error('AvraAPI Node.js SDK is server-only. Do not create ApixClient in a browser bundle or expose an API secret to the client.');
+        }
+    }
     /**
      * Resolve a value from an explicit option first, then from process.env.
      * Returns undefined when neither source has a non-empty string value.
@@ -82,4 +100,5 @@ export class Config {
         }
     }
 }
+exports.Config = Config;
 //# sourceMappingURL=Config.js.map

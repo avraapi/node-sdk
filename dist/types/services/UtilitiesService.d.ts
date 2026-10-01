@@ -38,7 +38,7 @@ export interface GenerateQrParams {
     readonly logoUrl?: string;
     /** Logo size as % of the QR image (5–40). */
     readonly logoSizePercent?: number;
-    /** Suppress payload storage in observability logs. @default false */
+    /** Send X-Privacy-Mode: 1 to suppress payload storage in observability logs. @default false */
     readonly privacyMode?: boolean;
 }
 export interface QrBase64Data {
@@ -64,7 +64,7 @@ export interface GenerateBarcodeParams {
     readonly height?: number;
     /** Horizontal bar width multiplier (1–4). */
     readonly widthFactor?: number;
-    /** Suppress payload storage in observability logs. @default false */
+    /** Send X-Privacy-Mode: 1 to suppress payload storage in observability logs. @default false */
     readonly privacyMode?: boolean;
 }
 export type PdfPageSize = 'A4' | 'Letter' | 'Legal';
@@ -112,8 +112,9 @@ export interface GeneratePdfParams {
     /** Custom page margins in millimetres. */
     readonly margins?: PdfMargins;
     /**
-     * When true, the raw HTML content and PDF metadata are excluded from
-     * api_payload_logs. Use for sensitive documents (invoices, contracts, PII).
+     * When true, sends X-Privacy-Mode: 1 so raw HTML content and PDF metadata
+     * are excluded from observability payload storage. Use for sensitive
+     * documents (invoices, contracts, PII).
      * @default false
      */
     readonly privacyMode?: boolean;
@@ -133,7 +134,7 @@ export interface GeneratePdfFromBase64Params {
     readonly orientation?: PdfOrientation;
     /** Custom page margins in millimetres. */
     readonly margins?: PdfMargins;
-    /** Suppress payload storage in observability logs. @default false */
+    /** Send X-Privacy-Mode: 1 to suppress payload storage in observability logs. @default false */
     readonly privacyMode?: boolean;
 }
 export interface PdfBase64Data {
@@ -301,5 +302,6 @@ export declare class UtilitiesService extends AbstractService {
      * when optional parameters are not provided.
      */
     private stripNulls;
+    private enablePrivacyModeFrom;
 }
 //# sourceMappingURL=UtilitiesService.d.ts.map

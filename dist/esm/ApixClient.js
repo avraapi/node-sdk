@@ -3,12 +3,13 @@
  *
  * APIX Node.js SDK — Main Client
  *
- * The primary entry point for all APIX API operations.
- * Instantiate once and reuse across your application.
+ * The primary entry point for all AvraAPI operations.
+ * Instantiate once and reuse it in trusted backend/server code only. This SDK
+ * requires a Client Secret and must never be included in a browser bundle.
  *
  * ── Quick Start ───────────────────────────────────────────────────────────────
  *
- *   import { ApixClient } from '@avraapi/apix-sdk';
+ *   import { ApixClient } from '@avraapi/node-sdk';
  *
  *   const apix = new ApixClient({
  *     projectKey: process.env.APIX_PROJECT_KEY,
@@ -33,8 +34,8 @@
  *
  * ── Universal Call (escape hatch) ─────────────────────────────────────────────
  *
- *   // For endpoints not yet covered by a typed service method:
- *   const result = await apix.call('POST', 'payments/checkout', { amount: 2500 });
+ *   // For a future provider endpoint not yet covered by a typed service method:
+ *   const result = await apix.call('POST', 'provider/example', { value: '...' });
  *
  *   // Smart path normalization — all equivalent:
  *   apix.call('POST', 'sms/send',                                   payload);
@@ -52,6 +53,7 @@ import { SmsService } from './services/SmsService.js';
 import { UtilitiesService } from './services/UtilitiesService.js';
 import { SecurityService } from './services/SecurityService.js';
 import { CurrencyService } from './services/CurrencyService.js';
+import { PaymentService } from './services/PaymentService.js';
 export class ApixClient {
     /** Resolved, immutable configuration. Useful for debugging. */
     config;
@@ -62,6 +64,7 @@ export class ApixClient {
     _utilities = null;
     _security = null;
     _currency = null;
+    _payment = null;
     /**
      * Create a new APIX client.
      *
@@ -73,14 +76,14 @@ export class ApixClient {
      *
      * @example
      * ```ts
-     * // Explicit config (e.g. in a multi-tenant app):
+     * // Explicit trusted-backend config (e.g. in a multi-tenant app):
      * const apix = new ApixClient({
-     *   projectKey: 'pk_live_...',
-     *   apiSecret:  'sk_live_...',
-     *   env:        'prod',
+     *   projectKey: process.env.APIX_PROJECT_KEY,
+     *   apiSecret:  process.env.APIX_API_SECRET,
+     *   env:        'dev',
      * });
      *
-     * // Local development against Laravel Sail:
+     * // Local Development API environment:
      * const apix = new ApixClient({
      *   projectKey: process.env.APIX_PROJECT_KEY,
      *   apiSecret:  process.env.APIX_API_SECRET,
@@ -185,12 +188,23 @@ export class ApixClient {
     currency() {
         return (this._currency ??= new CurrencyService(this.http));
     }
+    /**
+     * Access the server-only Universal Payment Gateway lifecycle.
+     *
+     * Keep the Client Secret and any returned completion context on your trusted
+     * backend. A browser redirect, overlay event, or embedded checkout event is
+     * never authoritative proof that a payment succeeded.
+     */
+    payment() {
+        return (this._payment ??= new PaymentService(this.http));
+    }
     // ── Universal Call ────────────────────────────────────────────────────────────
     /**
      * Make a raw API call to any APIX endpoint.
      *
      * This is the escape hatch for endpoints not yet covered by a typed service
-     * method. Uses the same smart path normalization as all service methods.
+     * method. Uses the same smart path normalization as all service methods; it
+     * is not a substitute for typed payment lifecycle functions.
      *
      * Currently only 'POST' is supported (APIX gateway uses POST for all
      * operations). Pass other methods for future-proofing.
@@ -213,13 +227,8 @@ export class ApixClient {
      * await apix.call('POST', '/api/v1/location/lookup',                 { ip: '1.1.1.1' });
      * await apix.call('POST', 'https://avraapi.com/api/v1/location/lookup', { ip: '1.1.1.1' });
      *
-     * // Call a future endpoint not yet in the SDK:
-     * const checkout = await apix.call('POST', 'payments/checkout', {
-     *   amount:   2500,
-     *   currency: 'LKR',
-     * });
-     * const response = checkout as ApiResponse;
-     * console.log(response.data.checkout_url);
+     * // Call a future provider endpoint not yet in the SDK:
+     * const response = await apix.call('POST', 'provider/example', { value: '...' });
      * ```
      */
     async call(method, path, payload = {}) {

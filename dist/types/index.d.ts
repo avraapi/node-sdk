@@ -1,7 +1,7 @@
 /**
  * @file src/index.ts
  *
- * @avraapi/apix-sdk — Official APIX Node.js SDK
+ * @avraapi/node-sdk — Official AvraAPI Node.js SDK
  *
  * Public surface area (everything a consumer can import):
  *
@@ -43,23 +43,29 @@
  *     CurrencyPairRateData, CurrencyConvertData
  *
  * Usage:
- *   import { ApixClient, ApixValidationError, BinaryResponse } from '@avraapi/apix-sdk';
+ *   import { ApixClient, ApixValidationError, BinaryResponse } from '@avraapi/node-sdk';
  */
 export { ApixClient } from './ApixClient.js';
 export type { ApixClientOptions } from './Config.js';
 export { ApiResponse } from './responses/ApiResponse.js';
 export { BinaryResponse } from './responses/BinaryResponse.js';
 export type { ApixRawEnvelope } from './responses/ApiResponse.js';
-export { ApixError, ApixAuthenticationError, ApixInsufficientFundsError, ApixValidationError, ApixRateLimitError, ApixServiceUnavailableError, ApixNetworkError, } from './errors/ApixErrors.js';
+export { ApixError, ApixAuthenticationError, ApixInsufficientFundsError, ApixValidationError, ApixRateLimitError, ApixServiceUnavailableError, ApixNetworkError, PaymentAccessError, PaymentConfigurationError, PaymentProviderError, PaymentVerificationError, } from './errors/ApixErrors.js';
 export type { ApixErrorPayload } from './errors/ApixErrors.js';
 export { LocationService } from './services/LocationService.js';
 export { SmsService } from './services/SmsService.js';
 export { UtilitiesService } from './services/UtilitiesService.js';
 export { SecurityService } from './services/SecurityService.js';
 export { CurrencyService } from './services/CurrencyService.js';
+export { PaymentService } from './services/PaymentService.js';
 export type { LookupIpParams, GeoIpData, GeoIpMeta, } from './services/LocationService.js';
 export type { SendSingleParams, SendBulkSameParams, SendBulkDifferentParams, SmsRecipientMessage, SmsSendData, SmsBalanceData, } from './services/SmsService.js';
 export type { GenerateQrParams, QrFormat, QrBase64Data, GenerateBarcodeParams, BarcodeType, BarcodeFormat, GeneratePdfParams, GeneratePdfFromBase64Params, PdfPageSize, PdfOrientation, PdfResponseType, PdfMargins, PdfBase64Data, } from './services/UtilitiesService.js';
 export type { CheckVpnParams, CheckBurnerEmailParams, VpnShieldData, BurnerEmailData, } from './services/SecurityService.js';
 export type { CurrencyCodeEntry, CurrencyCodesData, CurrencyLatestRatesData, CurrencyPairRateData, CurrencyConvertData, } from './services/CurrencyService.js';
+export { GatewayCode, GatewayEnvironment, CheckoutMode, PaymentStatus, PaymentAvailabilityReason, CreateOrderOptions, PaymentResponseOptions, PaymentCompletionOptions, VerifyCallbackOptions, SensitiveCallbackOptions, PaymentSession, PaymentAvailability, PaymentCompletionResult, VerificationResult, SensitiveMerchantArtifact, SensitiveVerificationResult, PaymentResponseValidationError, } from './payments/PaymentTypes.js';
+export { AuthorizationOptions, PreapprovalOptions, RecurringOrderOptions, MarxPayInitiatePaymentOptions, MarxPayReturnVerificationOptions, MarxPayPaymentResult, MarxPayReturnVerification, SubscriptionSummary, SubscriptionCommandResult, KokoOrderView, PayPlusStatus, PayPlusCallbackPayload, DirectPayCallbackPayload, StripeReturnPayload, StripeWebhookPayload, OnePayCallbackPayload, OnePayReturnPayload, KokoCallbackPayload, KokoReturnPayload, WebXPayReturnPayload, PaymentElementsRenderer, RedirectFormRenderer, } from './payments/GatewayTypes.js';
+export type { PayHereRefundInput, PayHereCaptureInput, PayHereChargeInput, PayHereSubscriptionCommandInput, PreapprovalOptionsInput, RecurringOrderOptionsInput, MarxPayInitiatePaymentOptionsInput, MarxPayReturnVerificationOptionsInput, KokoCallbackPayloadInput, KokoReturnPayloadInput, PaymentElementsAvailability, PaymentElementsOptions, } from './payments/GatewayTypes.js';
+export { PayHereService, PaymentElementsService, PayHereRetrievalService, PayHereRefundsService, PayHereAuthorizationService, PayHereCapturesService, PayHerePreapprovalService, PayHereRecurringService, PayHereSubscriptionService, PayHereChargesService, MarxPayService, OnePayService, KokoService, PayPlusService, WebXPayService, } from './services/PaymentGatewayServices.js';
+export type { PaymentScalar, PaymentPayload, PaymentCallbackPayload, PaymentCustomer, PaymentUrls, PaymentProviderOptions, PaymentMethod, PaymentResponseMode, CreateOrderOptionsInput, PaymentResponseOptionsInput, PaymentCompletionOptionsInput, VerifyCallbackOptionsInput, SensitiveCallbackOptionsInput, PaymentSessionData, PaymentMethodAvailability, PaymentCompletionResultData, VerificationResultData, } from './payments/PaymentTypes.js';
 //# sourceMappingURL=index.d.ts.map

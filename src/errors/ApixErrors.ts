@@ -15,6 +15,10 @@
  *       ├── ApixValidationError          (HTTP 422) + validationErrors field
  *       ├── ApixRateLimitError           (HTTP 429)
  *       ├── ApixServiceUnavailableError  (HTTP 503)
+ *       ├── PaymentAccessError            (UPG entitlement/configuration access)
+ *       ├── PaymentConfigurationError     (UPG checkout configuration)
+ *       ├── PaymentProviderError          (provider-side payment failure)
+ *       ├── PaymentVerificationError      (untrusted callback verification)
  *       └── ApixNetworkError             (transport failure, no HTTP response)
  *
  * Usage:
@@ -265,6 +269,58 @@ export class ApixServiceUnavailableError extends ApixError {
 
     return new ApixServiceUnavailableError(message, httpStatus, errorCode, requestId, payload);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Universal Payment Gateway errors
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The authenticated project cannot currently access Universal Payment Gateway checkout. */
+export class PaymentAccessError extends ApixError {
+  public static override fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): PaymentAccessError {
+    return paymentErrorFromPayload(PaymentAccessError, httpStatus, payload);
+  }
+}
+
+/** The selected payment gateway or checkout mode is not configured for the project. */
+export class PaymentConfigurationError extends ApixError {
+  public static override fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): PaymentConfigurationError {
+    return paymentErrorFromPayload(PaymentConfigurationError, httpStatus, payload);
+  }
+}
+
+/** A payment provider rejected or could not complete a gateway operation. */
+export class PaymentProviderError extends ApixError {
+  public static override fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): PaymentProviderError {
+    return paymentErrorFromPayload(PaymentProviderError, httpStatus, payload);
+  }
+}
+
+/** A callback/return payload could not be authenticated as a payment result. */
+export class PaymentVerificationError extends ApixError {
+  public static override fromPayload(httpStatus: number, payload: Partial<ApixErrorPayload>): PaymentVerificationError {
+    return paymentErrorFromPayload(PaymentVerificationError, httpStatus, payload);
+  }
+}
+
+function paymentErrorFromPayload<T extends ApixError>(
+  ErrorClass: new (
+    message: string,
+    httpStatus: number,
+    errorCode: string,
+    requestId: string | null,
+    payload: Partial<ApixErrorPayload>,
+  ) => T,
+  httpStatus: number,
+  payload: Partial<ApixErrorPayload>,
+): T {
+  return new ErrorClass(
+    payload.error?.message ?? 'Payment operation failed.',
+    httpStatus,
+    payload.error?.code ?? 'payment_error',
+    payload.request_id ?? null,
+    payload,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

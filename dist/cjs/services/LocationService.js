@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/services/LocationService.ts
  *
@@ -8,11 +9,13 @@
  *
  * @see https://avraapi.com/docs#tag/Location
  */
-import { AbstractService } from './AbstractService.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LocationService = void 0;
+const AbstractService_js_1 = require("./AbstractService.js");
 // ─────────────────────────────────────────────────────────────────────────────
 // LocationService
 // ─────────────────────────────────────────────────────────────────────────────
-export class LocationService extends AbstractService {
+class LocationService extends AbstractService_js_1.AbstractService {
     /**
      * Resolve an IP address to geographic and ISP metadata.
      *
@@ -49,11 +52,12 @@ export class LocationService extends AbstractService {
      */
     async lookupIp(params) {
         const { ip, privacyMode = false } = params;
-        const extraHeaders = privacyMode
-            ? { 'X-Privacy-Mode': '1' }
-            : {};
-        const response = await this.post('/location/lookup', { ip }, extraHeaders);
+        if (privacyMode) {
+            this.withPrivacyMode();
+        }
+        const response = await this.post('/location/lookup', { ip });
         return response;
     }
 }
+exports.LocationService = LocationService;
 //# sourceMappingURL=LocationService.js.map

@@ -30,6 +30,24 @@ export declare abstract class AbstractService {
      */
     withProvider(providerCode: string): this;
     /**
+     * Enable AvraAPI Privacy Mode for the next request only.
+     *
+     * The SDK sends `X-Privacy-Mode: 1` and clears the flag immediately after
+     * dispatch. Privacy Mode preserves normal routing, billing, and usage
+     * tracking while suppressing request and response payload storage according
+     * to the AvraAPI privacy guarantee.
+     *
+     * @returns `this` — fluent, for chaining.
+     *
+     * @example
+     * ```ts
+     * const response = await apix.security()
+     *   .withPrivacyMode()
+     *   .checkBurnerEmail({ email: 'customer@example.com' });
+     * ```
+     */
+    withPrivacyMode(): this;
+    /**
      * Dispatch a POST request via the shared HttpClient.
      *
      * @param path         Endpoint path (any format — HttpClient normalizes it).

@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/services/SmsService.ts
  *
@@ -12,11 +13,13 @@
  *
  * @see https://avraapi.com/docs#tag/SMS
  */
-import { AbstractService } from './AbstractService.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SmsService = void 0;
+const AbstractService_js_1 = require("./AbstractService.js");
 // ─────────────────────────────────────────────────────────────────────────────
 // SmsService
 // ─────────────────────────────────────────────────────────────────────────────
-export class SmsService extends AbstractService {
+class SmsService extends AbstractService_js_1.AbstractService {
     /**
      * Send a single SMS message to one recipient.
      *
@@ -157,4 +160,5 @@ export class SmsService extends AbstractService {
         return response;
     }
 }
+exports.SmsService = SmsService;
 //# sourceMappingURL=SmsService.js.map

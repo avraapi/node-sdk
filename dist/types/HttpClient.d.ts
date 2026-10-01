@@ -20,6 +20,8 @@ export declare class HttpClient {
     private readonly axiosInstance;
     /** Per-request provider override — consumed once, then cleared. */
     private pendingProviderOverride;
+    /** Per-request privacy control — consumed once, then cleared. */
+    private pendingPrivacyMode;
     constructor(config: Config);
     /**
      * Execute a POST request and return a typed response object.
@@ -45,6 +47,16 @@ export declare class HttpClient {
      * @internal
      */
     setProviderOverride(providerCode: string): void;
+    /**
+     * Enable AvraAPI Privacy Mode for the next request only.
+     *
+     * Called by AbstractService.withPrivacyMode(). The request still follows the
+     * normal authentication, routing, billing, and usage flow; the gateway uses
+     * X-Privacy-Mode to apply the platform privacy guarantee.
+     *
+     * @internal
+     */
+    enablePrivacyMode(): void;
     private handleResponse;
     private mapError;
     /**

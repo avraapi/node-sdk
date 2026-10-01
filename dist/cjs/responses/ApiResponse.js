@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/responses/ApiResponse.ts
  *
@@ -17,6 +18,8 @@
  *   console.log(response.get('data.country'));   // dot-notation accessor
  *   console.log(response.requestId);             // 'req_...'
  */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ApiResponse = void 0;
 // ─────────────────────────────────────────────────────────────────────────────
 // ApiResponse
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,7 +29,7 @@
  * TData is the expected shape of the `data` field. Defaults to
  * `Record<string, unknown>` when not specified.
  */
-export class ApiResponse {
+class ApiResponse {
     /** Full raw decoded JSON body. */
     raw;
     /** The `data` key of the response envelope. */
@@ -92,4 +95,5 @@ export class ApiResponse {
         return current;
     }
 }
+exports.ApiResponse = ApiResponse;
 //# sourceMappingURL=ApiResponse.js.map

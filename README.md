@@ -1,313 +1,70 @@
-# AvraAPI Node.js SDK
+<p align="center">
+  <a href="https://avraapi.com">
+    <img src="https://avraapi.com/images/logo/web-logo-with-icon-full-home.svg" alt="AvraAPI" height="72">
+  </a>
+</p>
 
-Official TypeScript/JavaScript SDK for the [AvraAPI (APIX)](https://avraapi.com) enterprise API gateway.
+<p align="center">
+  <a href="https://docs.avraapi.com/sdk/overview"><img src="https://img.shields.io/badge/AvraAPI-Official%20Node.js%20SDK-1666FF?style=for-the-badge" alt="Official AvraAPI Node.js SDK"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js 18 or later"></a>
+  <a href="https://docs.avraapi.com/universal-payment-gateway/overview"><img src="https://img.shields.io/badge/Universal%20Payment%20Gateway-Available-16A34A?style=for-the-badge" alt="Universal Payment Gateway"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0F766E?style=for-the-badge" alt="MIT License"></a>
+</p>
 
-Zero framework dependencies — works in any Node.js 18+ project.
+<h1 align="center">AvraAPI Node.js SDK</h1>
 
-> **Official SDK Documentation:** [https://avraapi.com/developers/sdks](https://avraapi.com/developers/sdks)
+<p align="center">
+  The official Node.js and TypeScript SDK for building with <a href="https://avraapi.com">AvraAPI</a>.
+  Connect a trusted backend application to configured service providers through one consistent platform experience.
+</p>
 
-```bash
-npm install @avraapi/node-sdk
-```
+<p align="center">
+  <a href="https://docs.avraapi.com"><strong>Read the documentation</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://docs.avraapi.com/sdk/overview"><strong>SDK guidelines</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://avraapi.com"><strong>Visit AvraAPI</strong></a>
+</p>
 
-## Quick Start
+## About AvraAPI
 
-```ts
-import { ApixClient } from '@avraapi/node-sdk';
+AvraAPI gives applications one reliable way to work with essential digital services and configured providers. It keeps integration choices clear while your application stays in control of its own users, data, and business decisions.
 
-const apix = new ApixClient({
-  apiKey:    'your-api-key',
-  apiSecret: 'your-api-secret',
-  env:       'dev', // 'dev' or 'prod'
-});
-```
+This SDK is designed for trusted Node.js applications running Node.js 18 or later. Complete setup, credential safety, service guidance, and current capabilities are maintained in the [AvraAPI Documentation](https://docs.avraapi.com).
 
 ## Services
 
-| Service | Accessor | Endpoints |
-|---------|----------|-----------|
-| Location | `apix.location()` | IP geolocation lookups |
-| SMS | `apix.sms()` | Single, bulk-same, bulk-different, balance |
-| Utilities | `apix.utilities()` | QR codes, barcodes, **PDF generation** |
-| Security | `apix.security()` | VPN & Proxy Shield, Burner Email Detection |
-| Currency | `apix.currency()` | Currency codes, live rates, pair rates, conversion |
+| Service | Built for |
+| --- | --- |
+| Currency | Currency codes, live exchange rates, conversions, and CBSL rate information. |
+| Location | IP address location details for applications that need geographic context. |
+| Security | VPN, proxy, hosting, relay, and disposable-email checks. |
+| SMS | Single and bulk messaging through configured SMS providers. |
+| Utilities | PDF, QR code, and barcode generation. |
 
----
+Each service uses the providers configured for your AvraAPI project. Review the [service guidelines](https://docs.avraapi.com) before enabling a service in your application.
 
-## PDF Generation
+## Advanced Service: Universal Payment Gateway
 
-### Basic HTML to PDF
+The Universal Payment Gateway (UPG) brings supported payment providers into one consistent payment lifecycle. It supports provider-aware checkout experiences, payment verification, secure completion handling, and Payment Elements helpers while keeping sensitive payment decisions on your backend.
 
-```ts
-import { BinaryResponse } from '@avraapi/node-sdk';
+UPG support includes payment providers such as PayHere, MarxPay, DirectPay, OnePay, WebXPay, KOKO, PayPlus, and Stripe when they are enabled for your project. Payment creation, callback verification, reconciliation, and other authoritative operations are server-only responsibilities; never put an AvraAPI Client Secret in a browser bundle.
 
-const html = '<h1>Invoice #001</h1><p>Total: $99.00</p>';
-const pdf = await apix.utilities().generatePdf({ html });
-await (pdf as BinaryResponse).saveAs('./output/invoice.pdf');
-```
+For checkout guidance, supported capabilities, Payment Elements, and provider-specific requirements, start with the [Universal Payment Gateway documentation](https://docs.avraapi.com/universal-payment-gateway/overview).
 
-### Landscape with Custom Margins
+## Documentation and guidelines
 
-```ts
-const landscape = await apix.utilities().generatePdf({
-  html,
-  pageSize:    'A4',
-  orientation: 'landscape',
-  margins:     { top: 20, right: 25, bottom: 20, left: 25 },
-});
-await (landscape as BinaryResponse).saveAs('./output/landscape.pdf');
-```
+The documentation is the source of truth for setup and integration guidance:
 
-### Base64 JSON Response
+- [AvraAPI Documentation](https://docs.avraapi.com)
+- [SDK Overview](https://docs.avraapi.com/sdk/overview)
+- [REST API Reference](https://docs.avraapi.com/api-reference/rest-api)
+- [Universal Payment Gateway](https://docs.avraapi.com/universal-payment-gateway/overview)
 
-```ts
-import { ApiResponse, type PdfBase64Data } from '@avraapi/node-sdk';
+## Developed by
 
-const result = await apix.utilities().generatePdf({
-  html,
-  responseType: 'base64',
-});
-const api = result as ApiResponse<PdfBase64Data>;
-const buf = Buffer.from(api.data.data, 'base64');
-await fs.promises.writeFile('./output/invoice.pdf', buf);
-```
-
----
-
-## Generating PDFs from Complex Templates (Base64 Mode)
-
-When your HTML contains quotes, newlines, inline CSS, or special characters, JSON escaping can cause issues. **Base64 mode** solves this by encoding the HTML before transport.
-
-### Option A: Use the `generatePdfFromBase64()` Helper (Recommended)
-
-The helper accepts **raw HTML** and encodes it automatically:
-
-```ts
-import { readFileSync } from 'node:fs';
-import { BinaryResponse } from '@avraapi/node-sdk';
-
-// Load a complex template from disk
-const html = readFileSync('./templates/invoice.html', 'utf-8');
-
-// The SDK Base64-encodes internally — no manual encoding needed
-const pdf = await apix.utilities().generatePdfFromBase64({ html });
-await (pdf as BinaryResponse).saveAs('./output/invoice.pdf');
-
-// With full options:
-const pdf = await apix.utilities().generatePdfFromBase64({
-  html,
-  responseType: 'binary',
-  pageSize:     'Letter',
-  orientation:  'landscape',
-  margins:      { top: 15, right: 20, bottom: 15, left: 20 },
-  privacyMode:  true,
-});
-await (pdf as BinaryResponse).saveAs('./output/invoice.pdf');
-```
-
-### Option B: Manual Base64 Encoding
-
-If you need full control, encode the HTML yourself and set `isBase64: true`:
-
-```ts
-const html = readFileSync('./templates/invoice.html', 'utf-8');
-const encoded = Buffer.from(html).toString('base64');
-
-const pdf = await apix.utilities().generatePdf({
-  html: encoded,
-  isBase64: true,
-});
-await (pdf as BinaryResponse).saveAs('./output/invoice.pdf');
-```
-
-### How It Works
-
-1. The SDK sends the Base64 string in the `html` field with `is_base64: true`.
-2. The server decodes the Base64 content before validation and rendering.
-3. The **512 KB size limit** applies to the **decoded** HTML, not the encoded payload.
-
----
-
-## Saving Files to Disk
-
-`BinaryResponse` provides both async and sync save methods:
-
-```ts
-// Async (preferred):
-const pdf = await apix.utilities().generatePdf({ html });
-const bin = pdf as BinaryResponse;
-const savedPath = await bin.saveAs('./output/invoice.pdf');
-console.log(`Saved to: ${savedPath}`);
-
-// Sync (when async is inconvenient):
-bin.saveAsSync('./output/invoice.pdf');
-
-// BinaryResponse also provides:
-bin.getBuffer();     // Node.js Buffer
-bin.contentType;     // 'application/pdf'
-bin.size;            // Size in bytes
-bin.isPdf();         // true
-bin.toDataUri();     // 'data:application/pdf;base64,...'
-
-// Express.js streaming:
-res.setHeader('Content-Type', bin.contentType);
-res.setHeader('Content-Length', bin.size.toString());
-res.send(bin.getBuffer());
-```
-
----
-
-## VPN & Proxy Shield
-
-Detect VPNs, proxies, Tor exit nodes, iCloud Private Relay, and hosting/datacenter IPs.
-
-```ts
-const result = await apix.security().checkVpn({ ip: '8.8.8.8' });
-
-console.log(result.data.ip_address);    // '8.8.8.8'
-console.log(result.data.is_vpn);        // false
-console.log(result.data.is_proxy);      // false
-console.log(result.data.is_tor);        // false
-console.log(result.data.country_code);  // 'US'
-console.log(result.data.network_name);  // 'Google LLC'
-
-// Quick threat check:
-const d = result.data;
-const isThreat = d.is_vpn || d.is_proxy || d.is_tor;
-```
-
----
-
-## Burner Email Shield
-
-Detect temporary and disposable email addresses (7,000+ domains).
-
-```ts
-const result = await apix.security().checkBurnerEmail({ email: 'user@mailinator.com' });
-
-console.log(result.data.is_disposable);     // true
-console.log(result.data.source);            // 'global'
-console.log(result.data.execution_time_ms); // 0.42
-
-// Guard a registration:
-if (result.data.is_disposable) {
-  throw new Error('Disposable emails are not allowed.');
-}
-```
-
----
-
-## Multi-Currency Rates & Conversion
-
-Free currency exchange rate API — 160+ currencies, 2-hour cached rates, zero credit cost.
-
-```ts
-// Get all currency codes
-const codes = await apix.currency().getCodes();
-console.log(codes.data.count); // 161
-
-// Get latest rates from a base currency
-const rates = await apix.currency().getLatestRates('USD');
-console.log(rates.data.rates['EUR']); // 0.89123456
-console.log(rates.data.rates['LKR']); // 298.50000000
-
-// Get pair rate
-const pair = await apix.currency().getPairRate('USD', 'EUR');
-console.log(pair.data.rate); // 0.89123456
-
-// Convert an amount
-const conv = await apix.currency().convert('USD', 'LKR', 100);
-console.log(`${conv.data.amount} ${conv.data.base} = ${conv.data.conversion_result} ${conv.data.target}`);
-// "100 USD = 29850.000000 LKR"
-```
-
----
-
-## Privacy Mode
-
-For sensitive documents, enable privacy mode to exclude HTML content from observability logs:
-
-```ts
-const pdf = await apix.utilities().generatePdf({ html, privacyMode: true });
-await (pdf as BinaryResponse).saveAs('./output/confidential.pdf');
-```
-
----
-
-## Error Handling
-
-The SDK throws typed errors for all API error responses:
-
-```ts
-import {
-  ApixRateLimitError,
-  ApixInsufficientFundsError,
-  ApixValidationError,
-  ApixAuthenticationError,
-  ApixError,
-} from '@avraapi/node-sdk';
-
-try {
-  const pdf = await apix.utilities().generatePdf({ html });
-  await (pdf as BinaryResponse).saveAs('./output/invoice.pdf');
-} catch (err) {
-  if (err instanceof ApixRateLimitError) {
-    // HTTP 429 — rate limit exceeded
-    console.error('Rate limited:', err.message);
-  } else if (err instanceof ApixInsufficientFundsError) {
-    // HTTP 402 — wallet balance too low
-    console.error('Insufficient balance:', err.message);
-  } else if (err instanceof ApixValidationError) {
-    // HTTP 422 — invalid input
-    console.error('Validation errors:', err.validationErrors);
-  } else if (err instanceof ApixAuthenticationError) {
-    // HTTP 401 — bad credentials
-    console.error('Auth failed:', err.message);
-  } else if (err instanceof ApixError) {
-    // Catch-all for any other APIX error
-    console.error(`[${err.errorCode}] ${err.message}`);
-  } else {
-    throw err;
-  }
-}
-```
-
----
-
-## TypeScript Types
-
-All parameter and response interfaces are exported for full type safety:
-
-```ts
-import type {
-  GeneratePdfParams,
-  GeneratePdfFromBase64Params,
-  PdfBase64Data,
-  PdfPageSize,
-  PdfOrientation,
-  PdfMargins,
-  CheckVpnParams,
-  VpnShieldData,
-  CheckBurnerEmailParams,
-  BurnerEmailData,
-  CurrencyCodeEntry,
-  CurrencyCodesData,
-  CurrencyLatestRatesData,
-  CurrencyPairRateData,
-  CurrencyConvertData,
-} from '@avraapi/node-sdk';
-```
-
----
-
-## Documentation
-
-For full API reference, usage guides, and interactive examples, visit:
-
-**[https://avraapi.com/developers/sdks](https://avraapi.com/developers/sdks)**
-
----
+Built and maintained by [Fidex Developers (Pvt) Ltd](https://fidex.lk) for the AvraAPI platform.
 
 ## License
 
-MIT — [Fidex Developers (Pvt) Ltd](https://avraapi.com)
+AvraAPI Node.js SDK is open-sourced under the [MIT License](LICENSE).

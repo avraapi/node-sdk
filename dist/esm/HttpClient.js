@@ -15,12 +15,12 @@
 import axios, { isAxiosError, } from 'axios';
 import { ApiResponse } from './responses/ApiResponse.js';
 import { BinaryResponse } from './responses/BinaryResponse.js';
-import { ApixError, ApixAuthenticationError, ApixInsufficientFundsError, ApixValidationError, ApixRateLimitError, ApixServiceUnavailableError, ApixNetworkError, } from './errors/ApixErrors.js';
+import { ApixError, ApixAuthenticationError, ApixInsufficientFundsError, ApixValidationError, ApixRateLimitError, ApixServiceUnavailableError, ApixNetworkError, PaymentAccessError, PaymentConfigurationError, PaymentProviderError, PaymentVerificationError, } from './errors/ApixErrors.js';
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 const BINARY_CONTENT_TYPES = ['image/png', 'image/svg+xml', 'application/pdf'];
-const SDK_VERSION = '1.1.2';
+const SDK_VERSION = '1.2.0';
 // ─────────────────────────────────────────────────────────────────────────────
 // HttpClient
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,6 +29,8 @@ export class HttpClient {
     axiosInstance;
     /** Per-request provider override — consumed once, then cleared. */
     pendingProviderOverride = null;
+    /** Per-request privacy control — consumed once, then cleared. */
+    pendingPrivacyMode = false;
     constructor(config) {
         this.config = config;
         this.axiosInstance = axios.create({
@@ -43,7 +45,7 @@ export class HttpClient {
             headers: {
                 'Accept': 'application/json, image/png, image/svg+xml, application/pdf',
                 'Content-Type': 'application/json',
-                'User-Agent': `avraapi/apix-node-sdk/${SDK_VERSION} Node/${process.version}`,
+                'User-Agent': `avraapi/node-sdk/${SDK_VERSION} Node/${process.version}`,
             },
         });
     }
@@ -119,6 +121,18 @@ export class HttpClient {
     setProviderOverride(providerCode) {
         this.pendingProviderOverride = providerCode.trim();
     }
+    /**
+     * Enable AvraAPI Privacy Mode for the next request only.
+     *
+     * Called by AbstractService.withPrivacyMode(). The request still follows the
+     * normal authentication, routing, billing, and usage flow; the gateway uses
+     * X-Privacy-Mode to apply the platform privacy guarantee.
+     *
+     * @internal
+     */
+    enablePrivacyMode() {
+        this.pendingPrivacyMode = true;
+    }
     // ── Response handling ───────────────────────────────────────────────────────
     handleResponse(response) {
         const status = response.status;
@@ -140,6 +154,19 @@ export class HttpClient {
     }
     // ── Error mapping ───────────────────────────────────────────────────────────
     mapError(httpStatus, payload) {
+        const code = payload.error?.code ?? '';
+        if (code.startsWith('payment_callback_')) {
+            return PaymentVerificationError.fromPayload(httpStatus, payload);
+        }
+        if (code.startsWith('upg_') || code === 'payment_configuration_not_available' || code === 'project_paused') {
+            return PaymentAccessError.fromPayload(httpStatus, payload);
+        }
+        if (code.startsWith('payment_configuration') || code === 'payment_gateway_not_available' || code === 'payment_mode_not_available') {
+            return PaymentConfigurationError.fromPayload(httpStatus, payload);
+        }
+        if (code.startsWith('payment_')) {
+            return PaymentProviderError.fromPayload(httpStatus, payload);
+        }
         switch (httpStatus) {
             case 401: return ApixAuthenticationError.fromPayload(httpStatus, payload);
             case 402: return ApixInsufficientFundsError.fromPayload(httpStatus, payload);
@@ -197,6 +224,10 @@ export class HttpClient {
         if (this.pendingProviderOverride != null) {
             headers['X-Provider-Override'] = this.pendingProviderOverride;
             this.pendingProviderOverride = null;
+        }
+        if (this.pendingPrivacyMode) {
+            headers['X-Privacy-Mode'] = '1';
+            this.pendingPrivacyMode = false;
         }
         return headers;
     }

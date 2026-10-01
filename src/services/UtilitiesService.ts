@@ -45,7 +45,7 @@ export interface GenerateQrParams {
   readonly logoUrl?: string;
   /** Logo size as % of the QR image (5–40). */
   readonly logoSizePercent?: number;
-  /** Suppress payload storage in observability logs. @default false */
+  /** Send X-Privacy-Mode: 1 to suppress payload storage in observability logs. @default false */
   readonly privacyMode?: boolean;
 }
 
@@ -85,7 +85,7 @@ export interface GenerateBarcodeParams {
   readonly height?: number;
   /** Horizontal bar width multiplier (1–4). */
   readonly widthFactor?: number;
-  /** Suppress payload storage in observability logs. @default false */
+  /** Send X-Privacy-Mode: 1 to suppress payload storage in observability logs. @default false */
   readonly privacyMode?: boolean;
 }
 
@@ -140,8 +140,9 @@ export interface GeneratePdfParams {
   /** Custom page margins in millimetres. */
   readonly margins?: PdfMargins;
   /**
-   * When true, the raw HTML content and PDF metadata are excluded from
-   * api_payload_logs. Use for sensitive documents (invoices, contracts, PII).
+   * When true, sends X-Privacy-Mode: 1 so raw HTML content and PDF metadata
+   * are excluded from observability payload storage. Use for sensitive
+   * documents (invoices, contracts, PII).
    * @default false
    */
   readonly privacyMode?: boolean;
@@ -162,7 +163,7 @@ export interface GeneratePdfFromBase64Params {
   readonly orientation?: PdfOrientation;
   /** Custom page margins in millimetres. */
   readonly margins?: PdfMargins;
-  /** Suppress payload storage in observability logs. @default false */
+  /** Send X-Privacy-Mode: 1 to suppress payload storage in observability logs. @default false */
   readonly privacyMode?: boolean;
 }
 
@@ -226,6 +227,8 @@ export class UtilitiesService extends AbstractService {
   public async generateQr(
     params: GenerateQrParams,
   ): Promise<ApiResponse<QrBase64Data> | BinaryResponse> {
+    this.enablePrivacyModeFrom(params.privacyMode);
+
     const payload = this.stripNulls({
       data:              params.data,
       format:            params.format              ?? 'png',
@@ -234,7 +237,6 @@ export class UtilitiesService extends AbstractService {
       background_color:  params.backgroundColor,
       logo_url:          params.logoUrl,
       logo_size_percent: params.logoSizePercent,
-      privacy_mode:      params.privacyMode === true ? true : undefined,
     });
 
     return this.post('/utilities/qr/generate', payload) as Promise<ApiResponse<QrBase64Data> | BinaryResponse>;
@@ -270,13 +272,14 @@ export class UtilitiesService extends AbstractService {
    * ```
    */
   public async generateBarcode(params: GenerateBarcodeParams): Promise<BinaryResponse> {
+    this.enablePrivacyModeFrom(params.privacyMode);
+
     const payload = this.stripNulls({
       data:         params.data,
       type:         params.type         ?? 'C128',
       format:       params.format       ?? 'png',
       height:       params.height,
       width_factor: params.widthFactor,
-      privacy_mode: params.privacyMode === true ? true : undefined,
     });
 
     const response = await this.post('/utilities/barcode/generate', payload);
@@ -335,6 +338,8 @@ export class UtilitiesService extends AbstractService {
   public async generatePdf(
     params: GeneratePdfParams,
   ): Promise<ApiResponse<PdfBase64Data> | BinaryResponse> {
+    this.enablePrivacyModeFrom(params.privacyMode);
+
     const payload = this.stripNulls({
       html:          params.html,
       is_base64:     params.isBase64 === true ? true : undefined,
@@ -342,7 +347,6 @@ export class UtilitiesService extends AbstractService {
       page_size:     params.pageSize      ?? 'A4',
       orientation:   params.orientation   ?? 'portrait',
       margins:       params.margins,
-      privacy_mode:  params.privacyMode === true ? true : undefined,
     });
 
     return this.post('/utilities/pdf/generate', payload) as Promise<ApiResponse<PdfBase64Data> | BinaryResponse>;
@@ -402,5 +406,11 @@ export class UtilitiesService extends AbstractService {
     return Object.fromEntries(
       Object.entries(obj).filter(([, v]) => v !== undefined && v !== null),
     );
+  }
+
+  private enablePrivacyModeFrom(privacyMode: boolean | undefined): void {
+    if (privacyMode) {
+      this.withPrivacyMode();
+    }
   }
 }

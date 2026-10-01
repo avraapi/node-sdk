@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @file src/services/CurrencyService.ts
  *
@@ -12,9 +13,11 @@
  *
  * @see https://avraapi.com/docs#tag/Currency
  */
-import { AbstractService } from './AbstractService.js';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CurrencyService = void 0;
+const AbstractService_js_1 = require("./AbstractService.js");
 // ── Service ──────────────────────────────────────────────────────────────────
-export class CurrencyService extends AbstractService {
+class CurrencyService extends AbstractService_js_1.AbstractService {
     // ── Currency Codes ──────────────────────────────────────────────────────────
     /**
      * Retrieve all supported currency codes.
@@ -92,4 +95,5 @@ export class CurrencyService extends AbstractService {
         return this.get(`/utility/currency/pair/${b}/${t}/${amount}`);
     }
 }
+exports.CurrencyService = CurrencyService;
 //# sourceMappingURL=CurrencyService.js.map

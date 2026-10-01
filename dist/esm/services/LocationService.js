@@ -49,10 +49,10 @@ export class LocationService extends AbstractService {
      */
     async lookupIp(params) {
         const { ip, privacyMode = false } = params;
-        const extraHeaders = privacyMode
-            ? { 'X-Privacy-Mode': '1' }
-            : {};
-        const response = await this.post('/location/lookup', { ip }, extraHeaders);
+        if (privacyMode) {
+            this.withPrivacyMode();
+        }
+        const response = await this.post('/location/lookup', { ip });
         return response;
     }
 }
